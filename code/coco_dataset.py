@@ -21,13 +21,14 @@ root
         |- [COCO validation images]
 '''
 
-def ids2fns(ids):
+def ids2fns(ids, extension = '.jpg'):
     '''
     Convert a list of numeric ids to a list of valid filenames
         ids: list(int)
+        extension: str
         return: list(str)
     '''
-    return [str(id).zfill(hp.DATA_FILENAME_LEN) + '.jpg' for id in ids]
+    return [str(id).zfill(hp.DATA_FILENAME_LEN) + extension for id in ids]
 
 # Standard COCO dataset with image caption pairs
 class COCODataset(torch.utils.data.Dataset):
@@ -91,6 +92,9 @@ class COCODataset(torch.utils.data.Dataset):
         # If the image is a single channel BW image, stack it three times
         if img_size[0] == 1:
             img = torch.cat((img, img, img), axis = 0)
+        
+        # Convert image to float
+        img = img.type(torch.FloatTensor)
 
         return img, caption
     
