@@ -48,7 +48,7 @@ if __name__ == '__main__':
         ids = torch.flatten(ids).tolist()
         fns = ids2fns(ids, '.pt')
         for i in range(len(fns)):
-            torch.save(encodings[i, ...].size(), os.path.join(img_encoding_dir, fns[i]))
+            torch.save(encodings[i, ...].clone(), os.path.join(img_encoding_dir, fns[i]))
 
         # Clear GPU memory
         del imgs_gpu
