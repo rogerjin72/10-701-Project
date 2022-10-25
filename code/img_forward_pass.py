@@ -27,9 +27,9 @@ if __name__ == '__main__':
     # Load the model
     model = resnet50(weights = ResNet50_Weights.IMAGENET1K_V2)
 
-    # Delete global pooling and fully connected layers
+    # Delete fully connected layer
     resnet50_layers = list(model.children())
-    model = torch.nn.Sequential(*resnet50_layers[:-2])
+    model = torch.nn.Sequential(*resnet50_layers[:-1])
     model.to(device)
 
     # Load the image-only dataset 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         ids = torch.flatten(ids).tolist()
         fns = ids2fns(ids, '.pt')
         for i in range(len(fns)):
-            torch.save(encodings[i, ...].clone(), os.path.join(img_encoding_dir, fns[i]))
+            torch.save(encodings[i, ...].squeeze().clone(), os.path.join(img_encoding_dir, fns[i]))
 
         # Clear GPU memory
         del imgs_gpu
