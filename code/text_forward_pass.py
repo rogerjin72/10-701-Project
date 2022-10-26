@@ -1,13 +1,13 @@
 import os
 import torch
 import numpy as np
-
+import hyperparams as hp
 from tqdm import tqdm
 from transformers import T5Tokenizer, T5EncoderModel
 from coco_dataset import COCODataset_CaptionOnly, ids2fns
 
 '''
-Perform the forward encoding pass on all images to generate representations of images
+Perform the forward encoding pass on all text to generate representations of images
 '''
 
 if __name__ == '__main__':
@@ -23,16 +23,10 @@ if __name__ == '__main__':
     else:
         text_encoding_dir = os.path.join(text_encoding_dir, 'encoding_val')
 
-    # Set up CUDA
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    else:
-        device = torch.device('cpu')
-
     # Load the model
     tokenizer = T5Tokenizer.from_pretrained(base_model, model_max_length=seq_len)
     model = T5EncoderModel.from_pretrained(base_model)
-    model.to(device)
+    model.to(hp.DEVICE)
 
     # Load the image-only dataset 
     dataset = COCODataset_CaptionOnly(os.path.join('data', 'coco_data'), train = train)

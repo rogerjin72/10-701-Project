@@ -18,19 +18,13 @@ if __name__ == '__main__':
     else:
         img_encoding_dir = os.path.join(img_encoding_dir, 'encoding_val')
 
-    # Set up CUDA
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    else:
-        device = torch.device('cpu')
-
     # Load the model
     model = resnet50(weights = ResNet50_Weights.IMAGENET1K_V2)
 
     # Delete fully connected layer
     resnet50_layers = list(model.children())
     model = torch.nn.Sequential(*resnet50_layers[:-1])
-    model.to(device)
+    model.to(hp.DEVICE)
 
     # Load the image-only dataset 
     dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), train = train)
@@ -40,7 +34,7 @@ if __name__ == '__main__':
     for imgs, ids in iter(dataloader):
 
         # Load GPU memory
-        imgs_gpu = imgs.to(device)
+        imgs_gpu = imgs.to(hp.DEVICE)
         # Forward pass
         encodings = model(imgs_gpu)
 

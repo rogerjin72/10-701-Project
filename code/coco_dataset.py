@@ -3,7 +3,6 @@ import torchvision
 import json
 import os
 import hyperparams as hp
-import matplotlib.pyplot as plt
 from torchvision import transforms
 
 '''
@@ -69,7 +68,6 @@ class COCODataset(torch.utils.data.Dataset):
         self.train_img_fns = ids2fns(self.train_img_ids)
         self.val_img_fns = ids2fns(self.val_img_ids)
 
-    # TODO: Caption sentence needs to be embedded as a torchtensor
     def __getitem__(self, index):
         '''
         Returns a single image-caption pair. There are multiple captions for each image, so multiple indicies may map to the same image
@@ -148,7 +146,6 @@ class COCODataset_CaptionOnly(COCODataset):
         '''
         super().__init__(root, train)
         
-    # TODO: Caption sentence needs to be embedded as a torchtensor
     def __getitem__(self, index):
         '''
         Returns a single caption and its corresponding id. There is a one-to-one relation between indicies and captions, but a 
