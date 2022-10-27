@@ -50,6 +50,7 @@ class CaptionModel(nn.Module):
         torch.tensor
             prefix tensor with dimensions (batch_size, prefix_length, GPT embed size)
         """
+        img = img.to(hp.DEVICE)
         prefix = self.align.forward(img)
         prefix = prefix.view(-1, self.prefix_len, self.gpt_dim)
         return prefix
@@ -70,7 +71,7 @@ class CaptionModel(nn.Module):
         transformers.modeling_outputs.CausalLMOutputWithCrossAttentions
             outputs of the GPT2 model, includes loss if use_labels is true
         """
-        prefix = generate_prefix(img)
+        prefix = self.generate_prefix(img)
 
         # tokenize input
         tokens = self.tokenizer(tokens, return_tensors='pt', padding=True)
@@ -84,20 +85,21 @@ class CaptionModel(nn.Module):
         inp_embed = torch.cat([prefix, embed], dim=1)
         
         mask = tokens['attention_mask']
+        # pad attention
+        mask_pad = torch.ones((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
+        mask_pad = mask_pad.long()
+        mask = torch.cat([mask_pad, mask], axis=1)
+
         labels = None
 
         # create labels
         if use_labels:
-            # pad attention
-            mask_pad = torch.ones((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
-            mask_pad = mask_pad.long()
-            mask = torch.cat([mask_pad, mask], axis=1)
-
-            # pad labels
             label_pad = torch.zeros((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
             label_pad = label_pad - 100
             label_pad = label_pad.long()
-            labels = torch.cat([dummy, tokens['input_ids']], axis=1)
-        
+            labels = torch.cat([label_pad, tokens['input_ids']], axis=1)
+
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask)
         return output
+
+
