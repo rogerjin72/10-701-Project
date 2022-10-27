@@ -1,3 +1,4 @@
+from enum import unique
 import torch
 import json
 import os
@@ -28,6 +29,20 @@ def ids2fns(ids, extension = '.jpg'):
     '''
     return [str(id).zfill(hp.DATA_FILENAME_LEN) + extension for id in ids]
 
+def remove_duplicate(annot):
+    '''
+    Remove multiple captions for the same image. Keeps the first caption for each image. 
+        annot: A list of annotations. The annotations must be sorted in ascending order by image id.
+        return: list(dict). List of unique annotations
+    '''
+    last_id = -1
+    unique_annot = []
+    for i in range(len(annot)):
+        if annot[i]['image_id'] != last_id:
+            last_id = annot[i]['image_id']
+            unique_annot.append(annot[i])
+    return unique_annot
+
 # Dataset of image embedding - text string pairs
 class EmbedDataset(torch.utils.data.Dataset):
 
@@ -55,6 +70,10 @@ class EmbedDataset(torch.utils.data.Dataset):
         with open(self.val_annot_dir) as f:
             self.val_annot = json.load(f)['annotations']
             self.val_annot.sort(key = lambda x: x['image_id'])
+
+        # Remove duplicate captions
+        self.train_annot = remove_duplicate(self.train_annot)
+        self.val_annot = remove_duplicate(self.val_annot)
 
         # Get list of image-caption indicies
         self.train_img_ids = [x['image_id'] for x in self.train_annot]

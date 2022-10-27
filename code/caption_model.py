@@ -1,7 +1,7 @@
 import torch
-import numpy as np
 import hyperparams as hp
 from torch import nn
+from mlp import MLP
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
 class CaptionModel(nn.Module):
@@ -22,8 +22,10 @@ class CaptionModel(nn.Module):
         self.gpt.to(hp.DEVICE)
         self.gpt_dim = self.gpt.transformer.wte.weight.shape[1]
         self.prefix_len = prefix_len
-        for param in self.gpt.parameters():
-            param.requires_grad=False
+
+        # Freeze the GPT2 weights
+        # for param in self.gpt.parameters():
+        #     param.requires_grad=False
 
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
         self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -31,7 +33,9 @@ class CaptionModel(nn.Module):
         if align_layer is not None:
             self.align = align_layer
         else:   
-            self.align = nn.Linear(in_features=input_shape, out_features=prefix_len*self.gpt_dim)
+            in_features = input_shape
+            out_features = prefix_len * self.gpt_dim
+            self.align = MLP(in_features, out_features, hp.N_HIDDEN)
     
     def forward(self, img: torch.tensor, tokens, use_labels=False):
         """
