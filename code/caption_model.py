@@ -112,6 +112,12 @@ class CaptionModel(nn.Module):
 
 class Predictor(object):
     def __init__(self, model: CaptionModel):
+        """
+        Parameters
+        ----------
+        model : CaptionModel
+            trained caption model
+        """
         self.model = model
         self.tokenizer = model.tokenizer
 
@@ -120,6 +126,16 @@ class Predictor(object):
     
 
     def greedy_predict(self, img: torch.Tensor, limit=10):
+        """
+        greedy search for next token
+
+        Parameters
+        ----------
+        img : torch.Tensor
+            tensor of images
+
+        Returns
+        """
         self.model.eval()
         self.model = self.model.to(hp.DEVICE)
         predictions = []
@@ -134,15 +150,16 @@ class Predictor(object):
 
                 # get next token
                 next_token = logits[:, -1, :].argmax().reshape((1,1))
-                scores.append(logits.max())
+                scores.append(logits.max().reshape(1))
                 predictions.append(next_token[0])
                 next_embed = self.gpt.transformer.wte(next_token)
                 inp_embed = torch.cat([inp_embed, next_embed], axis=1)
 
         predictions = torch.cat(predictions)
-        return torch.cat(predictions), scores, inp_embed
+        scores = torch.cat(scores)
+        return predictions, scores, inp_embed
 
-    def top_k_predict(self, img: torch.Tensor, k=5, limit=10):
+    def top_k_predict(self, img: torch.Tensor, k=5, limit=10, temperature=1.0):
         # NEED TO TEST
         self.model.eval()
         self.model = self.model.to(hp.DEVICE)
@@ -159,7 +176,7 @@ class Predictor(object):
                 # sampling logits
                 logits = logits[:, -1, :]
                 top_k = logits.top_k(k)
-                sample_logits = F.softmax(logits[top_k], axis=1)
+                sample_logits = F.softmax(logits[top_k] / temperature, axis=1)
                 next_token = torch.multinomial(probs, 1)
 
                 # get next token
