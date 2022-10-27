@@ -37,6 +37,23 @@ class CaptionModel(nn.Module):
             out_features = prefix_len * self.gpt_dim
             self.align = MLP(in_features, out_features, hp.N_HIDDEN)
     
+
+    def generate_prefix(self, img: torch.Tensor):
+        """
+        Parameters
+        ----------
+        img: torch.tensor
+            tensor of images
+
+        Returns
+        -------
+        torch.tensor
+            prefix tensor with dimensions (batch_size, prefix_length, GPT embed size)
+        """
+        prefix = self.align.forward(img)
+        prefix = prefix.view(-1, self.prefix_len, self.gpt_dim)
+        return prefix
+
     def forward(self, img: torch.tensor, tokens, use_labels=False):
         """
         Parameters
@@ -53,23 +70,34 @@ class CaptionModel(nn.Module):
         transformers.modeling_outputs.CausalLMOutputWithCrossAttentions
             outputs of the GPT2 model, includes loss if use_labels is true
         """
-        prefix = self.align.forward(img)
+        prefix = generate_prefix(img)
+
+        # tokenize input
         tokens = self.tokenizer(tokens, return_tensors='pt', padding=True)
         tokens = tokens.to(hp.DEVICE)
+
+        # generate embeddings
         embed = self.gpt.transformer.wte(tokens['input_ids'])
         embed = embed.to(hp.DEVICE)
 
-        prefix = prefix.view(-1, self.prefix_len, self.gpt_dim)
+        # concatenate prefix and embeddigns
         inp_embed = torch.cat([prefix, embed], dim=1)
         
         mask = tokens['attention_mask']
         labels = None
 
+        # create labels
         if use_labels:
-            dummy = torch.zeros((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
-            dummy = dummy.long()
+            # pad attention
+            mask_pad = torch.ones((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
+            mask_pad = mask_pad.long()
+            mask = torch.cat([mask_pad, mask], axis=1)
+
+            # pad labels
+            label_pad = torch.zeros((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
+            label_pad = label_pad - 100
+            label_pad = label_pad.long()
             labels = torch.cat([dummy, tokens['input_ids']], axis=1)
-            mask = torch.cat([dummy, mask], axis=1)
         
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask)
         return output
