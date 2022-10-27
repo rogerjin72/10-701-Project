@@ -1,2 +1,3 @@
 coco_data/
 encoding_data/
+*.pt
