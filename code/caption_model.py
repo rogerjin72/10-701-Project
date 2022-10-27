@@ -1,5 +1,7 @@
 import torch
 import hyperparams as hp
+import torch.nn.functional as F
+
 from torch import nn
 from mlp import MLP
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
@@ -55,7 +57,7 @@ class CaptionModel(nn.Module):
         prefix = prefix.view(-1, self.prefix_len, self.gpt_dim)
         return prefix
 
-    def forward(self, img: torch.tensor, tokens, use_labels=False):
+    def forward(self, img: torch.tensor, tokens, inp_embed=None, use_labels=False):
         """
         Parameters
         ----------
@@ -63,6 +65,8 @@ class CaptionModel(nn.Module):
             tensor of images
         tokens : {array-like, string}
             list of input strings or input string
+        inp_embed : torch.tensor, optional
+            tensor of the prefix and embeddings for GPT2, default None
         use_labels : bool, optional
             returns a loss if true, returns only logits otherwise, default False
         
@@ -71,28 +75,31 @@ class CaptionModel(nn.Module):
         transformers.modeling_outputs.CausalLMOutputWithCrossAttentions
             outputs of the GPT2 model, includes loss if use_labels is true
         """
-        prefix = self.generate_prefix(img)
-
         # tokenize input
         tokens = self.tokenizer(tokens, return_tensors='pt', padding=True)
         tokens = tokens.to(hp.DEVICE)
 
-        # generate embeddings
-        embed = self.gpt.transformer.wte(tokens['input_ids'])
-        embed = embed.to(hp.DEVICE)
+        if inp_embed is None:
+            prefix = self.generate_prefix(img)
 
-        # concatenate prefix and embeddigns
-        inp_embed = torch.cat([prefix, embed], dim=1)
-        
+            # generate embeddings
+            embed = self.gpt.transformer.wte(tokens['input_ids'])
+            embed = embed.to(hp.DEVICE)
+
+            # concatenate prefix and embeddigns
+            inp_embed = torch.cat([prefix, embed], dim=1)
+        else:
+            inp_embed.to(hp.DEVICE)
+
         mask = tokens['attention_mask']
+
         # pad attention
         mask_pad = torch.ones((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
         mask_pad = mask_pad.long()
         mask = torch.cat([mask_pad, mask], axis=1)
 
-        labels = None
-
         # create labels
+        labels = None
         if use_labels:
             label_pad = torch.zeros((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
             label_pad = label_pad - 100
@@ -101,5 +108,69 @@ class CaptionModel(nn.Module):
 
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask)
         return output
+
+
+class Predictor(object):
+    def __init__(self, model: CaptionModel):
+        self.model = model
+        self.tokenizer = model.tokenizer
+
+        self.stop = self.tokenizer.eos_token
+        self.gpt = model.gpt
+    
+
+    def greedy_predict(self, img: torch.Tensor, limit=10):
+        self.model.eval()
+        self.model = self.model.to(hp.DEVICE)
+        predictions = []
+        scores = []
+
+        with torch.no_grad():
+            inp_embed = self.model.generate_prefix(img)
+            
+            for n in range(limit): 
+                # forward pass
+                logits = self.gpt(inputs_embeds=inp_embed).logits
+
+                # get next token
+                next_token = logits[:, -1, :].argmax().reshape((1,1))
+                scores.append(logits.max())
+                predictions.append(next_token[0])
+                next_embed = self.gpt.transformer.wte(next_token)
+                inp_embed = torch.cat([inp_embed, next_embed], axis=1)
+
+        predictions = torch.cat(predictions)
+        return torch.cat(predictions), scores, inp_embed
+
+    def top_k_predict(self, img: torch.Tensor, k=5, limit=10):
+        # NEED TO TEST
+        self.model.eval()
+        self.model = self.model.to(hp.DEVICE)
+        predictions = []
+        scores = []
+
+        with torch.no_grad():
+            inp_embed = self.model.generate_prefix(img)
+            
+            for n in range(limit): 
+                # forward pass
+                logits = self.gpt(inputs_embeds=inp_embed).logits
+
+                # sampling logits
+                logits = logits[:, -1, :]
+                top_k = logits.top_k(k)
+                sample_logits = F.softmax(logits[top_k], axis=1)
+                next_token = torch.multinomial(probs, 1)
+
+                # get next token
+                next_token = top_k[next_token].reshape((1,1))
+                
+                scores.append(logits.max())
+                predictions.append(next_token[0])
+                next_embed = self.gpt.transformer.wte(next_token)
+                inp_embed = torch.cat([inp_embed, next_embed], axis=1)
+
+        predictions = torch.cat(predictions)
+        return torch.cat(predictions), scores, inp_embed
 
 
