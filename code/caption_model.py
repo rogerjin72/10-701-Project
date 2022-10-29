@@ -161,7 +161,6 @@ class Predictor(object):
                 inp_embed = torch.cat([inp_embed, next_embed], axis=1)
 
         predictions = torch.cat(predictions)
-
         return predictions, inp_embed
 
     def top_k_predict(self, img: torch.Tensor, k=5, limit=10, temperature=1.0):
@@ -184,7 +183,6 @@ class Predictor(object):
         (torch.Tensor)
             a tuple of tensors, input ids of predictions and token embeddings
         """
-        # NEED TO TEST
         self.model.eval()
         self.model = self.model.to(hp.DEVICE)
         predictions = []
@@ -238,7 +236,6 @@ class Predictor(object):
         (torch.Tensor)
             a tuple of tensors, input ids of predictions and token embeddings
         """
-        # NEED TO TEST
         self.model.eval()
         self.model = self.model.to(hp.DEVICE)
         predictions = []
@@ -250,7 +247,7 @@ class Predictor(object):
                 # forward pass
                 logits = self.gpt(inputs_embeds=inp_embed).logits
 
-                # get sort logits
+                # get sorted logits
                 logits = logits[:, -1, :]
                 logits = logits.flatten()
                 probs = F.softmax(logits / temperature)
@@ -265,8 +262,6 @@ class Predictor(object):
 
                 # sample next logit
                 next_token = torch.multinomial(probs[top_p], 1)
-
-                # get next token
                 next_token = top_p[next_token].reshape(1,1)
                 
                 # append scores, prediction, embeddings
