@@ -1,3 +1,6 @@
 coco_data/
 encoding_data/
+val_data/
 *.pt
+*.png
+*.jpg

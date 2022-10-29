@@ -35,6 +35,7 @@ if __name__ == '__main__':
 
         # Load GPU memory
         imgs_gpu = imgs.to(hp.DEVICE)
+        
         # Forward pass
         encodings = model(imgs_gpu)
 
