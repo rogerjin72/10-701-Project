@@ -133,13 +133,17 @@ class Predictor(object):
         ----------
         img : torch.Tensor
             tensor of images
+        limit : int, optional
+            maximum number of tokens to output, default 10
 
         Returns
+        -------
+        (torch.Tensor)
+            a tuple of tensors, input ids of predictions and token embeddings
         """
         self.model.eval()
         self.model = self.model.to(hp.DEVICE)
         predictions = []
-        scores = []
 
         with torch.no_grad():
             inp_embed = self.model.generate_prefix(img)
@@ -150,21 +154,40 @@ class Predictor(object):
 
                 # get next token
                 next_token = logits[:, -1, :].argmax().reshape((1,1))
-                scores.append(logits.max().reshape(1))
+
+                # append scores, prediction, embeddings
                 predictions.append(next_token[0])
                 next_embed = self.gpt.transformer.wte(next_token)
                 inp_embed = torch.cat([inp_embed, next_embed], axis=1)
 
         predictions = torch.cat(predictions)
-        scores = torch.cat(scores)
-        return predictions, scores, inp_embed
+
+        return predictions, inp_embed
 
     def top_k_predict(self, img: torch.Tensor, k=5, limit=10, temperature=1.0):
+        """
+        top k search for next token
+
+        Parameters
+        ----------
+        img : torch.Tensor
+            tensor of images
+        k : int, optional
+            number of items to sample, default 5
+        limit : int, optional
+            maximum number of tokens to output, default 10
+        temperature :  float, optional
+            scaling factor for logits, default 1.0
+
+        Returns
+        -------
+        (torch.Tensor)
+            a tuple of tensors, input ids of predictions and token embeddings
+        """
         # NEED TO TEST
         self.model.eval()
         self.model = self.model.to(hp.DEVICE)
         predictions = []
-        scores = []
 
         with torch.no_grad():
             inp_embed = self.model.generate_prefix(img)
@@ -173,21 +196,84 @@ class Predictor(object):
                 # forward pass
                 logits = self.gpt(inputs_embeds=inp_embed).logits
 
-                # sampling logits
+                # get top k logits
                 logits = logits[:, -1, :]
-                top_k = logits.top_k(k)
-                sample_logits = F.softmax(logits[top_k] / temperature, axis=1)
+                logits = logits.flatten()
+                top_k = logits.topk(k).indices
+
+                # sample next logit
+                probs = F.softmax(logits[top_k] / temperature)
                 next_token = torch.multinomial(probs, 1)
 
                 # get next token
-                next_token = top_k[next_token].reshape((1,1))
+                next_token = top_k[next_token].reshape(1,1)
                 
-                scores.append(logits.max())
+                # append scores, prediction, embeddings
                 predictions.append(next_token[0])
                 next_embed = self.gpt.transformer.wte(next_token)
                 inp_embed = torch.cat([inp_embed, next_embed], axis=1)
 
-        predictions = torch.cat(predictions)
-        return torch.cat(predictions), scores, inp_embed
+        predictions = torch.cat(predictions, axis=0)
+        return predictions, inp_embed
 
+    def top_p_predict(self, img: torch.Tensor, p=0.9, k=1, limit=10, temperature=1.0):
+        """
+        top k search for next token
+
+        Parameters
+        ----------
+        img : torch.Tensor
+            tensor of images
+        p : float, optional
+            threshold for top-p sampling, default 0.9
+        k : int, optional
+            number of items to sample, not used if value is None, default 1
+        limit : int, optional
+            maximum number of tokens to output, default 10
+        temperature :  float, optional
+            scaling factor for logits, default 1.0
+
+        Returns
+        -------
+        (torch.Tensor)
+            a tuple of tensors, input ids of predictions and token embeddings
+        """
+        # NEED TO TEST
+        self.model.eval()
+        self.model = self.model.to(hp.DEVICE)
+        predictions = []
+
+        with torch.no_grad():
+            inp_embed = self.model.generate_prefix(img)
+            
+            for n in range(limit): 
+                # forward pass
+                logits = self.gpt(inputs_embeds=inp_embed).logits
+
+                # get sort logits
+                logits = logits[:, -1, :]
+                logits = logits.flatten()
+                probs = F.softmax(logits / temperature)
+                probs, indices = torch.sort(probs, descending=True)
+                
+                # get top p
+                probs = probs.cumsum(dim=0)
+                top_p = indices[probs < p]
+
+                if k and len(top_p) < k:
+                    top_p = indices[:k]
+
+                # sample next logit
+                next_token = torch.multinomial(probs[top_p], 1)
+
+                # get next token
+                next_token = top_p[next_token].reshape(1,1)
+                
+                # append scores, prediction, embeddings
+                predictions.append(next_token[0])
+                next_embed = self.gpt.transformer.wte(next_token)
+                inp_embed = torch.cat([inp_embed, next_embed], axis=1)
+
+        predictions = torch.cat(predictions, axis=0)
+        return predictions, inp_embed
 
