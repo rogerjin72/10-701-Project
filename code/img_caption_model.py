@@ -16,6 +16,7 @@ class ImageCaptionModel(nn.Module):
         resnet = resnet50(weights = ResNet50_Weights.IMAGENET1K_V2)
         resnet50_layers = list(resnet.children())
         self.img_encoder = torch.nn.Sequential(*resnet50_layers[:-1])
+        self.img_encoder.eval()
 
         # Text decoder
         self.txt_decoder = CaptionModel()
@@ -32,6 +33,6 @@ class ImageCaptionModel(nn.Module):
         '''
         img_encoding = self.img_encoder(img)[:, :, 0, 0]
         img_encoding = img_encoding.to(hp.DEVICE)
-        text = self.predictor.greedy_predict(img_encoding, limit = 20)
+        text = self.predictor.top_k_predict(img_encoding, limit = 20)
         return text
         

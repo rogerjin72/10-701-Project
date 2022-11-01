@@ -25,6 +25,7 @@ if __name__ == '__main__':
     resnet50_layers = list(model.children())
     model = torch.nn.Sequential(*resnet50_layers[:-1])
     model.to(hp.DEVICE)
+    model.eval()
 
     # Load the image-only dataset 
     dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), train = train)

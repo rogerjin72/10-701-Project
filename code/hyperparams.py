@@ -12,8 +12,8 @@ RESNET_50_INPUT_SIZE = 224      # Input size of the Resnet 50 architecture
 
 # Training loop
 BATCH_SIZE = 16
-NUM_EPOCHS = 10
-LEARN_RATE = 1E-6
+NUM_EPOCHS = 1000
+LEARN_RATE = 1E-4
 
 # Network structure
 N_HIDDEN = 2560

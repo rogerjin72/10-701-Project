@@ -26,8 +26,8 @@ class CaptionModel(nn.Module):
         self.prefix_len = prefix_len
 
         # Freeze the GPT2 weights
-        # for param in self.gpt.parameters():
-        #     param.requires_grad=False
+        for param in self.gpt.parameters():
+            param.requires_grad=False
 
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
         self.tokenizer.pad_token = self.tokenizer.eos_token

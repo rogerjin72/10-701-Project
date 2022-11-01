@@ -20,6 +20,20 @@ root
         |- [COCO validation images]
 '''
 
+def remove_duplicate(annot):
+    '''
+    Remove multiple captions for the same image. Keeps the first caption for each image. 
+        annot: A list of annotations. The annotations must be sorted in ascending order by image id.
+        return: list(dict). List of unique annotations
+    '''
+    last_id = -1
+    unique_annot = []
+    for i in range(len(annot)):
+        if annot[i]['image_id'] != last_id:
+            last_id = annot[i]['image_id']
+            unique_annot.append(annot[i])
+    return unique_annot
+
 def ids2fns(ids, extension = '.jpg'):
     '''
     Convert a list of numeric ids to a list of valid filenames
@@ -56,6 +70,10 @@ class COCODataset(torch.utils.data.Dataset):
         with open(self.val_annot_dir) as f:
             self.val_annot = json.load(f)['annotations']
             self.val_annot.sort(key = lambda x: x['image_id'])
+
+        # Remove duplicate captions
+        self.train_annot = remove_duplicate(self.train_annot)
+        self.val_annot = remove_duplicate(self.val_annot)
 
         # Get list of image-caption indicies
         self.train_img_ids = [x['image_id'] for x in self.train_annot]
@@ -162,4 +180,36 @@ class COCODataset_CaptionOnly(COCODataset):
         return caption, torch.tensor([id])
 
 if __name__ == "__main__":
-    pass
+    import matplotlib.pyplot as plt
+    from embed_dataset import EmbedDataset
+    from torchvision.models import resnet50, ResNet50_Weights
+
+    # Load the model
+    model = resnet50(weights = ResNet50_Weights.IMAGENET1K_V2)
+
+    # Delete fully connected layer
+    resnet50_layers = list(model.children())
+    model = torch.nn.Sequential(*resnet50_layers[:-1])
+    model.to(hp.DEVICE)
+    model.eval()
+
+    # Get some datasets
+    dataset_coco = COCODataset(os.path.join('data', 'coco_data'), False)
+    dataset_embed = EmbedDataset('data', False)
+
+    # Verify that the embeddings match
+    for i in range(10):
+        img, id = dataset_coco[i]
+        embed, id = dataset_embed[i]
+        img = img[None, :].to(hp.DEVICE)
+        embed_ref = model(img)
+        
+        p = embed.squeeze()
+        q = embed_ref.squeeze()
+        _, q_top = torch.topk(q, k = 5)
+        _, p_top = torch.topk(p, k = 5)
+
+        print(p_top)
+        print(q_top)
+        print()
+    

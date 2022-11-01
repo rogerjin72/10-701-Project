@@ -6,11 +6,11 @@ import os
 import hyperparams as hp
 from embed_dataset import EmbedDataset
 from caption_model import CaptionModel
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 import matplotlib.pyplot as plt
 
 # ADJUST THESE VALUES FOR TRAINING:
-model_save_path = os.path.join('models', 'unfrozen_gpt2')
+model_save_path = os.path.join('models', 'frozen_gpt2')
 resume_model = None
 resume = False
 
@@ -19,6 +19,10 @@ if __name__ == '__main__':
     # Load datasets
     dataset_train = EmbedDataset('data', True)
     dataset_val = EmbedDataset('data', False)
+
+    # Select one datapoint - for overfitting test
+    # dataset_train = Subset(dataset_train, range(10))
+    # dataset_val = Subset(dataset_train, range(10))
 
     N_train = len(dataset_train)
     N_val = len(dataset_val)
@@ -58,7 +62,7 @@ if __name__ == '__main__':
         start_epoch = 0
 
     # Epoch loop
-    for epoch in range(start_epoch, hp.NUM_EPOCHS):
+    for epoch in range(start_epoch, hp.NUM_EPOCHS + 1):
         
         train_loss = 0
         val_loss = 0
@@ -104,15 +108,16 @@ if __name__ == '__main__':
         epoch_val_losses.append(val_loss / N_val)
 
         # Save model and epoch statistics
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': copy.deepcopy(model.state_dict()),
-            'optimizer_state_dict': copy.deepcopy(optim.state_dict())}, os.path.join(model_save_path, 'model_epoch{0}.pt'.format(epoch)))
-        torch.save({'train_losses': epoch_train_losses,
-                    'val_losses': epoch_val_losses}, os.path.join(model_save_path, 'losses.pt'))
-        torch.save({'batch_size': hp.BATCH_SIZE,
-                    'learn_rate': hp.LEARN_RATE,
-                    'hidden_nodes': hp.N_HIDDEN}, os.path.join(model_save_path, 'hyperparams.pt'))
+        if epoch % 1 == 0:
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': copy.deepcopy(model.state_dict()),
+                'optimizer_state_dict': copy.deepcopy(optim.state_dict())}, os.path.join(model_save_path, 'model_epoch{0}.pt'.format(epoch)))
+            torch.save({'train_losses': epoch_train_losses,
+                        'val_losses': epoch_val_losses}, os.path.join(model_save_path, 'losses.pt'))
+            torch.save({'batch_size': hp.BATCH_SIZE,
+                        'learn_rate': hp.LEARN_RATE,
+                        'hidden_nodes': hp.N_HIDDEN}, os.path.join(model_save_path, 'hyperparams.pt'))
 
     # Plot loss curves
     plt.plot(epoch_train_losses)
