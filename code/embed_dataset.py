@@ -46,11 +46,12 @@ def remove_duplicate(annot):
 # Dataset of image embedding - text string pairs
 class EmbedDataset(torch.utils.data.Dataset):
 
-    def __init__(self, root, train):
+    def __init__(self, root, train, all_caps = False):
         '''
         Reads in raw data from disk to create the dataset
             root (str): directory relative to cwd where raw data is stored
             train (bool): whether or not to load training data
+            all_caps (bool): whether to keep all captions or use only one
             return: COCODataset
         '''
         self.train = train
@@ -72,8 +73,9 @@ class EmbedDataset(torch.utils.data.Dataset):
             self.val_annot.sort(key = lambda x: x['image_id'])
 
         # Remove duplicate captions
-        self.train_annot = remove_duplicate(self.train_annot)
-        self.val_annot = remove_duplicate(self.val_annot)
+        if not all_caps:
+            self.train_annot = remove_duplicate(self.train_annot)
+            self.val_annot = remove_duplicate(self.val_annot)
 
         # Get list of image-caption indicies
         self.train_img_ids = [x['image_id'] for x in self.train_annot]

@@ -33,6 +33,6 @@ class ImageCaptionModel(nn.Module):
         '''
         img_encoding = self.img_encoder(img)[:, :, 0, 0]
         img_encoding = img_encoding.to(hp.DEVICE)
-        text = self.predictor.top_k_predict(img_encoding, limit = 20)
+        text = self.predictor.top_k_predict(img_encoding, limit = 20, k = 3)
         return text
         
