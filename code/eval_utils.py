@@ -15,31 +15,30 @@ except LookupError:
     nltk.download('punkt')
 
 from nltk.tokenize import word_tokenize
-from nltk.translate.bleu_score import corpus_bleu
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
 
-def get_bleu(predictions: list, targets: list):
+def get_bleu(prediction: str, targets: list):
     """
     get bleu score for a corpus
 
     Parameters
     ----------
-    predictions : list
-        list of model predictions as strings
-    targets : list
-        list of lists, inner list is the ground truth captions
+    predictions : 
+        a string
+    targets : 
+        list of candidates
     
     Returns
     -------
     float
         BLEU score
     """
-    p_tokens = [word_tokenize(p) for p in predictions]
-    t_tokens = []
+    p_tokens = word_tokenize(prediction)
+    t_tokens = [word_tokenize(t) for t in targets]
 
-    for target in targets:
-        t_tokens.append([word_tokenize(t) for t in target])
-
-    bleu = corpus_bleu(t_tokens, p_tokens)
+    # added smoothing in case 3 or 4 grams not present
+    chencherry = SmoothingFunction()
+    bleu = sentence_bleu(t_tokens, p_tokens, smoothing_function=chencherry.method1)
     return bleu
 

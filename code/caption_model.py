@@ -154,6 +154,10 @@ class Predictor(object):
 
                 # get next token
                 next_token = logits[:, -1, :].argmax().reshape((1,1))
+                
+                # stop if reach EOS token
+                if next_token.item() == self.gpt.config.eos_token_id:
+                    break
 
                 # append scores, prediction, embeddings
                 predictions.append(next_token[0])
@@ -200,12 +204,16 @@ class Predictor(object):
                 top_k = logits.topk(k).indices
 
                 # sample next logit
-                probs = F.softmax(logits[top_k] / temperature)
+                probs = F.softmax(logits[top_k] / temperature, dim=0)
                 next_token = torch.multinomial(probs, 1)
 
                 # get next token
                 next_token = top_k[next_token].reshape(1,1)
                 
+                # stop if reach EOS token
+                if next_token.item() == self.gpt.config.eos_token_id:
+                    break
+
                 # append scores, prediction, embeddings
                 predictions.append(next_token[0])
                 next_embed = self.gpt.transformer.wte(next_token)
@@ -250,7 +258,7 @@ class Predictor(object):
                 # get sorted logits
                 logits = logits[:, -1, :]
                 logits = logits.flatten()
-                probs = F.softmax(logits / temperature)
+                probs = F.softmax(logits / temperature, dim=0)
                 probs, indices = torch.sort(probs, descending=True)
                 
                 # get top p
@@ -264,6 +272,10 @@ class Predictor(object):
                 next_token = torch.multinomial(probs[top_p], 1)
                 next_token = top_p[next_token].reshape(1,1)
                 
+                # stop if reach EOS token
+                if next_token.item() == self.gpt.config.eos_token_id:
+                    break
+
                 # append scores, prediction, embeddings
                 predictions.append(next_token[0])
                 next_embed = self.gpt.transformer.wte(next_token)
