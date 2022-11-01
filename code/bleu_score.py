@@ -39,4 +39,4 @@ for model in os.listdir(MODEL_PATH):
         top_k_predictions.append(decoder.tokenizer.decode(token_ids))
         top_k_bleu.append(get_bleu(greedy_pred, captions))
 
-    scores[model] = {'greedy': sum(greedy_bleu)/len(greedy_bleu), 'top_k': sum(top_k_bleu) / top_k_bleu}
+    scores[model] = {'greedy': sum(greedy_bleu)/len(greedy_bleu), 'top_k': sum(top_k_bleu) / len(top_k_bleu)}
