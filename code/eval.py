@@ -12,10 +12,10 @@ Forward pass the image caption model and save results
 
 # Path to save captioned images:
 img_path = os.path.join('data', 'eval_data', 'val')
-num_imgs = 8 # Number of images to caption
+num_imgs = 6 # Number of images to caption
 
 # Load validation data
-dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), False)
+dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), True)
 dataloader = DataLoader(dataset, shuffle = True)
 
 # Load caption generator
@@ -24,6 +24,7 @@ tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
 # Sample images
 i = 0
+text = None
 for img, id in iter(dataloader):
     i += 1
     if i > num_imgs:
@@ -34,11 +35,13 @@ for img, id in iter(dataloader):
     caption = tokenizer.decode(tokens).split('<|endoftext|>')[0]
 
     # Plot/show
+    if text:
+        text.remove()
     id = id.squeeze().item()
     img = img[0].permute(1, 2, 0).to(torch.uint8)
     plt.gca().axes.get_xaxis().set_ticks([])
     plt.gca().axes.get_yaxis().set_ticks([])
+    text = plt.figtext(0.5, 0.9, caption, fontsize = 16, wrap = True, ha = 'center')
     plt.imshow(img)
-    plt.xlabel(caption)
     plt.savefig(os.path.join(img_path, '{0}.jpg'.format(id)))
 
