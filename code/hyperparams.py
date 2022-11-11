@@ -5,6 +5,7 @@ if torch.cuda.is_available():
     DEVICE = torch.device('cuda')
 else:
     DEVICE = torch.device('cpu')
+print(DEVICE)
 
 # Dataset and dataloading
 DATA_FILENAME_LEN = 12          # Number of digits in data filenames
