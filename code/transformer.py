@@ -5,11 +5,25 @@ from torch import nn
 
 
 class PositionalEncodingLayer(nn.Module):
+    """
+    Implement positional encoding
+    """
     def __init__(self, embedding_dim: int):
         super().__init__()
         self.embedding_dim = embedding_dim
 
     def forward(self, X: torch.Tensor):
+        """
+        Parameters
+        ----------
+        X :
+            input
+        
+        Returns
+        -------
+        torch.Tensor : 
+            input with positional embeddings
+        """
         _, seq_len, _ = X.shape
         pos_embedding = torch.zeros((seq_len, self.embedding_dim))
         
@@ -32,14 +46,46 @@ class PositionalEncodingLayer(nn.Module):
 
 
 class Encoder(nn.Module):
+    """
+    Implement Transformer encoder block for prefix generation
+    """
     def __init__(self, embedding_dim: int, heads: int, layers: int, inp_seq: int, out_seq: int):
+        """
+        Parameters
+        ----------
+        embedding_dim : 
+            dimension of text and image embeddings
+        heads : 
+            number of heads to use for multihead attention
+        inp_seq : 
+            sequence length of input (197 for ViT)
+        out_seq : 
+            sequence length of the prefix
+        
+        Returns
+        -------
+        None
+        """
         super().__init__()
         self.pos_embedding = PositionalEncodingLayer(embedding_dim)
         block = nn.TransformerEncoderLayer(embedding_dim, heads)
         self.encoder = nn.TransformerEncoder(block, layers)
+        # linear combination of final embeddings
         self.combine = nn.Conv1d(in_channels=inp_seq, out_channels=out_seq, kernel_size=1)
     
-    def forward(self, X):
+    def forward(self, X: torch.Tensor):
+        """
+        Parameters
+        ----------
+        X : 
+            input
+
+        Returns
+        -------
+        torch.Tensor :
+            mapped prefix
+        """
+        # reshape if single instance
         if len(input.shape) == 2:
             X = X.reshape(1, X.shape[0], X.shape[1])
             
