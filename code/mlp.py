@@ -22,3 +22,8 @@ class MLP(nn.Module):
         
         x = self.fc_out(x)
         return x
+
+if __name__ == '__main__':
+    model = MLP(2048, 3072, 2560)
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(pytorch_total_params)

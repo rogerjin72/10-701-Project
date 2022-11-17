@@ -1,6 +1,7 @@
 coco_data/
 encoding_data/
 val_data/
+vit_data/
 *.pt
 *.png
 *.jpg

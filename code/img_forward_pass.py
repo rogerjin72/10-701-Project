@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Load the model
     model = resnet50(weights = ResNet50_Weights.IMAGENET1K_V2)
-
+    
     # Delete fully connected layer
     resnet50_layers = list(model.children())
     model = torch.nn.Sequential(*resnet50_layers[:-1])
