@@ -7,7 +7,7 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from transformer import EncoderConv2D, EncoderConv1D
 
 class CaptionModel(nn.Module):
-    def __init__(self):
+    def __init__(self, conv=2):
 
         super().__init__()
         self.gpt = GPT2LMHeadModel.from_pretrained('gpt2')
@@ -24,8 +24,10 @@ class CaptionModel(nn.Module):
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Alignment layer
-        # self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
-        self.align = EncoderConv1D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS, hp.EMBED_LEN, hp.PREFIX_LEN)
+        if conv == 2:
+            self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
+        else:
+            self.align = EncoderConv1D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS, hp.EMBED_LEN, hp.PREFIX_LEN)
 
     def generate_prefix(self, img: torch.Tensor):
         """
