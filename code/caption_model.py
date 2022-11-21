@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
-from transformer import EncoderConv2D
+from transformer import EncoderConv2D, EncoderConv1D
 
 class CaptionModel(nn.Module):
     def __init__(self):
@@ -24,7 +24,8 @@ class CaptionModel(nn.Module):
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Alignment layer
-        self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
+        # self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
+        self.align = EncoderConv1D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS, hp.EMBED_LEN, hp.PREFIX_LEN)
 
     def generate_prefix(self, img: torch.Tensor):
         """
@@ -180,7 +181,7 @@ class Predictor(object):
         with torch.no_grad():
             inp_embed = self.model.generate_prefix(img)
             
-            for n in range(limit): 
+            for _ in range(limit): 
                 # forward pass
                 logits = self.gpt(inputs_embeds=inp_embed).logits
 
@@ -210,7 +211,7 @@ class Predictor(object):
 
     def top_p_predict(self, img: torch.Tensor, p=0.9, k=1, limit=10, temperature=1.0):
         """
-        top k search for next token
+        top p search for next token
 
         Parameters
         ----------
@@ -237,7 +238,7 @@ class Predictor(object):
         with torch.no_grad():
             inp_embed = self.model.generate_prefix(img)
             
-            for n in range(limit): 
+            for _ in range(limit): 
                 # forward pass
                 logits = self.gpt(inputs_embeds=inp_embed).logits
 
@@ -270,3 +271,103 @@ class Predictor(object):
         predictions = torch.cat(predictions, axis=0)
         return predictions, inp_embed
 
+    def beam_predict(self, img: torch.Tensor, k=5, limit=10):
+        """
+        beam search for next token
+
+        Parameters
+        ----------
+        img : torch.Tensor
+            tensor of images
+        k : int, optional
+            beam size, default 5
+        limit : int, optional
+            maximum number of tokens to output, default 10
+
+        Returns
+        -------
+        (torch.Tensor)
+            a tuple of tensors, input ids of predictions and token embeddings
+        """
+        self.model.eval()
+        self.model = self.model.to(hp.DEVICE)
+
+        candidates = []
+        candidate_scores = []
+        candidate_embeddings = []
+
+        with torch.no_grad():
+            inp_embed = self.model.generate_prefix(img)
+            # get log probabilities
+            logits = self.gpt(inputs_embeds=inp_embed).logits
+            logits = torch.log(F.softmax(logits, dim=-1))
+            logits = logits[:, -1, :].flatten()
+            
+            # get top-k scores
+            scores, top_k = logits.topk(k)
+            scores = scores.reshape(k, 1)
+            top_k = top_k.reshape(k, 1)
+
+            # append embedding
+            embeds = self.gpt.transformer.wte(top_k).reshape((k, -1, inp_embed.shape[-1]))
+            inp_embed = inp_embed.repeat_interleave(k, dim=0)
+            inp_embed = torch.cat([inp_embed, embeds], axis=1)
+
+            for n in range(limit - 1): 
+                if not k:
+                    break
+                # get log probabilities
+                logits = self.gpt(inputs_embeds=inp_embed).logits
+                logits = torch.log(F.softmax(logits, dim=-1))
+                logits = logits[:, -1, :]
+
+                # format embeddings, scores, inputs
+                top_k = top_k.repeat_interleave(k, dim=0)
+                inp_embed = inp_embed.repeat_interleave(k, dim=0)
+                scores = scores.repeat_interleave(k, dim=0)
+
+                # get top-k predictions for each beam
+                next_score, next_token = logits.topk(k)
+                next_score = next_score.flatten().reshape(-1, 1)
+
+                # get running mean score
+                scores = torch.cat([scores * (n+1) / (n+2), next_score * 1/(n+2)], axis=1)
+                scores = scores.sum(axis=1)
+                
+                # append tokens and embeddings
+                next_token = next_token.flatten().reshape(-1, 1)
+                top_k = torch.cat([top_k, next_token], axis=1)
+                embeds = self.gpt.transformer.wte(next_token).reshape((-1, 1, inp_embed.shape[-1]))
+                inp_embed = torch.cat([inp_embed, embeds], axis=1)
+
+                # retain top-k scores
+                scores, indices = scores.topk(k)
+                scores = scores.reshape(k, 1)
+                top_k = top_k[indices]
+                inp_embed = inp_embed[indices]
+
+                # reduce beam size if eos token reached
+                eos_token = (top_k[:, -1] == self.gpt.config.eos_token_id).flatten()
+                num_stops = eos_token.sum()
+
+                if num_stops:
+                    # append tokens, scores when stopped
+                    eos_top_k = top_k[eos_token]
+                    eos_scores = scores[eos_token]
+                    eos_embed = inp_embed[eos_token]
+
+                    candidates.append(eos_top_k)
+                    candidate_scores.append(eos_scores)
+                    candidate_embeddings.append(eos_embed)
+
+                    k = max(k - num_stops, 0)
+                    top_k = top_k[~eos_token]
+                    scores = scores[~eos_token]
+                    inp_embed = inp_embed[~eos_token]
+
+        # format candidates and scores, get top scoring prediction
+        candidates = [t for i in candidates for t in i]
+        candidate_embeddings = [t for i in candidate_embeddings for t in i]
+        scores = torch.cat(candidate_scores).flatten()
+
+        return candidates[scores.argmax()], candidate_embeddings[scores.argmax()]
