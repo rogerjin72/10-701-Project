@@ -66,10 +66,11 @@ def collate_labels(ids, labels):
 # Dataset of image embedding - text string pairs
 class EmbedDataset(torch.utils.data.Dataset):
 
-    def __init__(self, root, train, all_caps = False, collate = False):
+    def __init__(self, root, embed_dir, train, all_caps = False, collate = False):
         '''
         Reads in raw data from disk to create the dataset
             root (str): directory relative to cwd where raw data is stored
+            embed_dir (str): directory relative to root where embeddings are stored
             train (bool): whether or not to load training data
             all_caps (bool): whether to keep all captions or use only one
             collate (bool): whether to group captions corresponding to the same image id
@@ -79,9 +80,9 @@ class EmbedDataset(torch.utils.data.Dataset):
 
         # Get paths
         self.root = root
-        self.train_data_dir = os.path.join(root, 'encoding_data', 'img_encodings', 'encoding_train')
+        self.train_data_dir = os.path.join(root, embed_dir, 'train')
         self.train_annot_dir = os.path.join(root, 'coco_data', 'coco_annotations', 'coco_train_annot.json')
-        self.val_data_dir = os.path.join(root, 'encoding_data', 'img_encodings', 'encoding_val')
+        self.val_data_dir = os.path.join(root, embed_dir, 'val')
         self.val_annot_dir = os.path.join(root, 'coco_data', 'coco_annotations', 'coco_val_annot.json')
 
         # Load labels
@@ -114,7 +115,6 @@ class EmbedDataset(torch.utils.data.Dataset):
         self.train_embed_fns = ids2fns(self.train_img_ids, extension = '.pt')
         self.val_embed_fns = ids2fns(self.val_img_ids, extension = '.pt')
 
-    # TODO: Caption sentence needs to be embedded as a torchtensor
     def __getitem__(self, index):
         '''
         Returns a single image-caption pair. There are multiple captions for each image, so multiple indicies may map to the same image

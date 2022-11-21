@@ -3,42 +3,28 @@ import hyperparams as hp
 import torch.nn.functional as F
 
 from torch import nn
-from mlp import MLP
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformer import EncoderConv2D
 
 class CaptionModel(nn.Module):
-    def __init__(self, prefix_len=4, input_shape=2048, align_layer=None):
-        """
-        Parameters
-        ----------
-        prefix_len : int, optional
-            length of prefix token, default 4
-        input_shape : int, optional
-            length of input, default 2048
-        align_layer : torch.nn.Module, optional
-            model used to connect img and text representations, linear layer
-            if no value is passed, default None
-        """
+    def __init__(self):
+
         super().__init__()
         self.gpt = GPT2LMHeadModel.from_pretrained('gpt2')
         self.gpt.to(hp.DEVICE)
         self.gpt_dim = self.gpt.transformer.wte.weight.shape[1]
-        self.prefix_len = prefix_len
+        self.prefix_len = hp.PREFIX_LEN
 
         # Freeze the GPT2 weights
-        for param in self.gpt.parameters():
-            param.requires_grad=False
+        if hp.FREEZE_GPT2:
+            for param in self.gpt.parameters():
+                param.requires_grad=False
 
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        if align_layer is not None:
-            self.align = align_layer
-        else:   
-            in_features = input_shape
-            out_features = prefix_len * self.gpt_dim
-            self.align = MLP(in_features, out_features, hp.N_HIDDEN)
-    
+        # Alignment layer
+        self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
 
     def generate_prefix(self, img: torch.Tensor):
         """

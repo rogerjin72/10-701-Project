@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import hyperparams as hp
 from caption_model import CaptionModel, Predictor
-from torchvision.models import resnet50, ResNet50_Weights
+from transformers import ViTFeatureExtractor, ViTModel
 
 class ImageCaptionModel(nn.Module):
     def __init__(self, model_path):
@@ -13,10 +13,10 @@ class ImageCaptionModel(nn.Module):
         super().__init__()
 
         # Load image encoder (on cpu)
-        resnet = resnet50(weights = ResNet50_Weights.IMAGENET1K_V2)
-        resnet50_layers = list(resnet.children())
-        self.img_encoder = torch.nn.Sequential(*resnet50_layers[:-1])
-        self.img_encoder.eval()
+        
+        self.feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
+        self.vit = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
+        self.vit.eval()
 
         # Text decoder
         self.txt_decoder = CaptionModel()
@@ -31,8 +31,9 @@ class ImageCaptionModel(nn.Module):
         return: str
             Caption of the image
         '''
-        img_encoding = self.img_encoder(img)[:, :, 0, 0]
-        img_encoding = img_encoding.to(hp.DEVICE)
+        img_features = self.feature_extractor(img.long(), return_tensors="pt")
+        img_encoding = self.vit(**img_features)
+        img_encoding = img_encoding.last_hidden_state
         text = self.predictor.top_k_predict(img_encoding, limit = 20, k = 3)
         return text
         

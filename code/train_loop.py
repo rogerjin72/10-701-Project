@@ -7,22 +7,24 @@ import hyperparams as hp
 from embed_dataset import EmbedDataset
 from caption_model import CaptionModel
 from torch.utils.data import DataLoader, Subset
+from transformers import get_linear_schedule_with_warmup
 import matplotlib.pyplot as plt
 
+
 # ADJUST THESE VALUES FOR TRAINING:
-model_save_path = os.path.join('models', 'frozen_gpt2')
+model_save_path = os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps')
 resume_model = None
 resume = False
 
 if __name__ == '__main__':
 
     # Load datasets
-    dataset_train = EmbedDataset('data', True)
-    dataset_val = EmbedDataset('data', False)
+    dataset_train = EmbedDataset('data', 'encoding_vit', train = True, all_caps = True)
+    dataset_val = EmbedDataset('data', 'encoding_vit', train = False, all_caps = False)
 
-    # Select one datapoint - for overfitting test
+    # Select a small number of datapoints - for overfitting test
     # dataset_train = Subset(dataset_train, range(10))
-    # dataset_val = Subset(dataset_train, range(10))
+    # dataset_val = Subset(dataset_val, range(1))
 
     N_train = len(dataset_train)
     N_val = len(dataset_val)
@@ -40,7 +42,7 @@ if __name__ == '__main__':
         model.load_state_dict(model_checkpoint['model_state_dict'])
         
         # Optimizer
-        optim = torch.optim.Adam(model.parameters(), hp.LEARN_RATE)
+        optim = torch.optim.AdamW(model.parameters(), hp.LEARN_RATE, weight_decay = hp.WEIGHT_DECAY)
         optim.load_state_dict(model_checkpoint['optimizer_state_dict'])
 
         # Statistics
@@ -55,7 +57,9 @@ if __name__ == '__main__':
     else:
         model = CaptionModel()
         model.to(hp.DEVICE)
-        optim = torch.optim.Adam(model.parameters(), hp.LEARN_RATE)
+        optim = torch.optim.AdamW(model.parameters(), hp.LEARN_RATE, weight_decay = hp.WEIGHT_DECAY)
+        schedule = get_linear_schedule_with_warmup(optim, num_warmup_steps = hp.WARMUP_EPOCHS * len(dataloader_train),  
+                                                   num_training_steps = hp.NUM_EPOCHS * len(dataloader_train))
 
         epoch_train_losses = []
         epoch_val_losses = []
@@ -76,7 +80,6 @@ if __name__ == '__main__':
             for embeds, captions in tepoch:
 
                 # Forward
-                optim.zero_grad()
                 embeds = embeds.to(hp.DEVICE)
                 out = model(embeds, captions, use_labels = True)
                 loss = out.loss
@@ -84,6 +87,8 @@ if __name__ == '__main__':
                 # Backward
                 loss.backward()
                 optim.step()
+                schedule.step()
+                optim.zero_grad()
 
                 # Log batch statistics
                 N_trained += len(captions)
@@ -106,6 +111,7 @@ if __name__ == '__main__':
         # Log epoch statistics
         epoch_train_losses.append(train_loss / N_train)
         epoch_val_losses.append(val_loss / N_val)
+        print(val_loss / N_val)
 
         # Save model and epoch statistics
         if epoch % 1 == 0:
@@ -116,8 +122,7 @@ if __name__ == '__main__':
             torch.save({'train_losses': epoch_train_losses,
                         'val_losses': epoch_val_losses}, os.path.join(model_save_path, 'losses.pt'))
             torch.save({'batch_size': hp.BATCH_SIZE,
-                        'learn_rate': hp.LEARN_RATE,
-                        'hidden_nodes': hp.N_HIDDEN}, os.path.join(model_save_path, 'hyperparams.pt'))
+                        'learn_rate': hp.LEARN_RATE}, os.path.join(model_save_path, 'hyperparams.pt'))
 
     # Plot loss curves
     plt.plot(epoch_train_losses)

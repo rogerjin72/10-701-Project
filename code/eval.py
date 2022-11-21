@@ -3,15 +3,15 @@ import torch
 import matplotlib.pyplot as plt
 from coco_dataset import COCODataset_ImageOnly
 from img_caption_model import ImageCaptionModel
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer
 
 '''
 Forward pass the image caption model and save results
 '''
 
-train = False
-num_imgs = 3
+train = True
+num_imgs = 100
 
 # Path to save captioned images:
 if train:
@@ -24,7 +24,8 @@ dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), train)
 dataloader = DataLoader(dataset, shuffle = True)
 
 # Load caption generator
-img_cap_model = ImageCaptionModel(os.path.join('models', 'unfrozen_gpt2', 'model_epoch2.pt'))
+img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2', 'model_epoch9.pt'))
+img_cap_model.eval()
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
 # Sample images
@@ -36,6 +37,7 @@ for img, id in iter(dataloader):
         break
 
     # Pass through caption generator
+    img = img.squeeze()
     tokens, _ = img_cap_model(img)
     caption = tokenizer.decode(tokens).split('<|endoftext|>')[0]
 
@@ -43,7 +45,7 @@ for img, id in iter(dataloader):
     if text:
         text.remove()
     id = id.squeeze().item()
-    img = img[0].permute(1, 2, 0).to(torch.uint8)
+    img = img.permute(1, 2, 0).to(torch.uint8)
     plt.gca().axes.get_xaxis().set_ticks([])
     plt.gca().axes.get_yaxis().set_ticks([])
     text = plt.figtext(0.5, 0.9, caption, fontsize = 16, wrap = True, ha = 'center')

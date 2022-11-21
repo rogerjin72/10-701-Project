@@ -1,12 +1,10 @@
 import torch
 import os
-import json
 import hyperparams as hp
 
 from eval_utils import get_bleu
 from pathlib import Path
 from caption_model import CaptionModel, Predictor
-from transformers import GPT2Tokenizer
 from embed_dataset import EmbedDataset
 from tqdm import tqdm
 
@@ -49,6 +47,6 @@ for i in range(0, len(fns), 2):
 
     scores[model] = {'greedy': sum(greedy_bleu) / len(greedy_bleu), 'top_k': sum(top_k_bleu) / len(top_k_bleu)}
     preds[model] = {'greedy': greedy_predictions, 'top_k': top_k_predictions}
-
+        
 torch.save(preds, SAVE_PATH / 'frozen_pgt2_val_pred.pt')
 torch.save(scores, SAVE_PATH / 'frozen_gpt2_val_bleu.pt')
