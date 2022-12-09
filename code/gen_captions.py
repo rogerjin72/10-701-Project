@@ -10,7 +10,7 @@ from transformers import GPT2Tokenizer
 Forward pass the image caption model and save results
 '''
 
-train = True
+train = False
 num_imgs = 100
 
 # Path to save captioned images:
@@ -24,7 +24,7 @@ dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), train)
 dataloader = DataLoader(dataset, shuffle = True)
 
 # Load caption generator
-img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2', 'model_epoch9.pt'))
+img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_8x8', 'model_epoch5.pt'))
 img_cap_model.eval()
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 

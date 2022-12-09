@@ -11,15 +11,15 @@ DATA_FILENAME_LEN = 12          # Number of digits in data filenames
 RESNET_50_INPUT_SIZE = 224      # Input size of the Resnet 50 architecture
 
 # Training loop
-BATCH_SIZE = 8
+BATCH_SIZE = 6
 LEARN_RATE = 2E-5
 NUM_EPOCHS = 10
 WARMUP_EPOCHS = 1
 WEIGHT_DECAY = 1E-2
 
 # Network structure
-ATTN_LAYERS = 6
-ATTN_HEADS = 6
+ATTN_LAYERS = 4
+ATTN_HEADS = 4
 PREFIX_LEN = 16
 EMBED_LEN = 197
 EMBED_DIM = 768

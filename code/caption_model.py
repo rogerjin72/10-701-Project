@@ -24,10 +24,15 @@ class CaptionModel(nn.Module):
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Alignment layer
+<<<<<<< Updated upstream
         if conv == 2:
             self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
         else:
             self.align = EncoderConv1D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS, hp.EMBED_LEN, hp.PREFIX_LEN)
+=======
+        self.align = EncoderConv1D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS, hp.EMBED_LEN, hp.PREFIX_LEN)
+        #self.align = EncoderConv2D(hp.EMBED_DIM, hp.ATTN_HEADS, hp.ATTN_LAYERS)
+>>>>>>> Stashed changes
 
     def generate_prefix(self, img: torch.Tensor):
         """
@@ -42,7 +47,7 @@ class CaptionModel(nn.Module):
             prefix tensor with dimensions (batch_size, prefix_length, GPT embed size)
         """
         img = img.to(hp.DEVICE)
-        prefix = self.align.forward(img)
+        prefix = self.align(img)
         prefix = prefix.view(-1, self.prefix_len, self.gpt_dim)
         return prefix
 

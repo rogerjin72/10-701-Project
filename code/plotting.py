@@ -8,7 +8,7 @@ fig, ax = plt.subplots(nrows = 1, ncols = 2)
 c1 = u'#1f77b4'
 c2 = u'#ff7f0e'
 
-data = torch.load(os.path.join('models', 'ViT_conv1d_frozen_gpt2', 'losses.pt'))
+data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_8x8', 'losses.pt'))
 train_loss = data['train_losses']
 val_loss = data['val_losses']
 print(min(train_loss))
@@ -19,14 +19,14 @@ ax[0].plot(val_loss, color = c2, label = 'Validation Loss', marker = '.')
 ax[0].axvline(np.argmin(val_loss), color = c2, linestyle = '--', linewidth = 1)
 ax[0].axhline(np.min(val_loss), color = c2, linestyle = '--', linewidth = 1)
 ax[0].set_xlim(left = 0, right = 20)
-ax[0].set_ylim(bottom = 1.5, top = 2)
+ax[0].set_ylim(bottom = 1.5, top = 2.5)
 
 ax[0].legend(loc = 'upper left')
 ax[0].set_xlabel('Epochs')
 ax[0].set_ylabel('Loss')
 ax[0].set_title('1D Convolution')
 
-data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2', 'losses.pt'))
+data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps', 'losses.pt'))
 train_loss = data['train_losses']
 val_loss = data['val_losses']
 print(min(train_loss))
@@ -37,7 +37,7 @@ ax[1].plot(val_loss, color = c2, label = 'Validation Loss', marker = '.')
 ax[1].axvline(np.argmin(val_loss), color = c2, linestyle = '--', linewidth = 1)
 ax[1].axhline(np.min(val_loss), color = c2, linestyle = '--', linewidth = 1)
 ax[1].set_xlim(left = 0, right = 20)
-ax[1].set_ylim(bottom = 1.5, top = 2)
+ax[1].set_ylim(bottom = 1.5, top = 2.5)
 
 ax[1].legend(loc = 'upper left')
 ax[1].set_xlabel('Epochs')
