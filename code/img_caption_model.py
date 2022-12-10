@@ -36,7 +36,7 @@ class ImageCaptionModel(nn.Module):
         img_features = self.feature_extractor(img.long(), return_tensors="pt")
         img_encoding = self.vit(**img_features)
         img_encoding = img_encoding.last_hidden_state
-        text = self.predictor.top_k_predict(img_encoding, limit = 20, k = 3)
+        text = self.predictor.beam_predict(img_encoding, limit = 20, k = 5)
         return text
 
     def attach_hook(self):

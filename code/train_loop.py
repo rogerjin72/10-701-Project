@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 # ADJUST THESE VALUES FOR TRAINING:
-model_save_path = os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_8x8')
+model_save_path = os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_4x4')
 resume_model = None
 resume = False
 
@@ -29,8 +29,8 @@ if __name__ == '__main__':
     N_train = len(dataset_train)
     N_val = len(dataset_val)
 
-    dataloader_train = DataLoader(dataset_train, batch_size = hp.BATCH_SIZE, shuffle = True)
-    dataloader_val = DataLoader(dataset_val, batch_size = hp.BATCH_SIZE, shuffle = False)
+    dataloader_train = DataLoader(dataset_train, batch_size = hp.BATCH_SIZE, shuffle = True, num_workers = 8)
+    dataloader_val = DataLoader(dataset_val, batch_size = hp.BATCH_SIZE, shuffle = False, num_workers = 8)
 
     # Resume training
     if resume:

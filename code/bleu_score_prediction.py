@@ -12,9 +12,9 @@ from tqdm import tqdm
 
 DIR = Path(os.getcwd())
 SAVE_PATH = DIR / 'data' / 'predictions'
-MODEL_PATH = DIR / 'models' / '8x8'
+MODEL_PATH = DIR / 'models' / 'ViT_conv2d_frozen_gpt2_allcaps_8x8'
 
-checkpoint = torch.load(MODEL_PATH / 'model_epoch5.pt', map_location=torch.device(hp.DEVICE))
+checkpoint = torch.load(MODEL_PATH / 'model_epoch10.pt', map_location = torch.device(hp.DEVICE))
 
 decoder = CaptionModel(conv=2)
 decoder.load_state_dict(checkpoint['model_state_dict'])
@@ -41,15 +41,14 @@ for file in tqdm(sorted(os.listdir('data/encoding_vit/val'))[1:]):
     beam_pred = decoder.tokenizer.decode(token_ids)
     beam_prediction[img_id] = beam_pred.split('.')[0] + '.'
 
-json.dump(greedy_prediction, open(SAVE_PATH / '8x8/6_epoch/greedy.json', 'w'), indent=4)
-json.dump(beam_prediction, open(SAVE_PATH / '8x8/6_epoch/beam.json', 'w'), indent=4)  
-
+json.dump(greedy_prediction, open(SAVE_PATH / '8x8/10_epoch/greedy.json', 'w'), indent=4)
+json.dump(beam_prediction, open(SAVE_PATH / '8x8/10_epoch/beam.json', 'w'), indent=4)
 
 DIR = Path(os.getcwd())
 PRED_PATH = DIR / 'data' / 'predictions' 
 SAVE_PATH = DIR / 'data' / 'eval_data' / 'bleu'
 
-targets = json.load(open('data/coco_annotations/coco_val_annot.json'))
+targets = json.load(open('data/coco_data/coco_annotations/coco_val_annot.json'))
 targets = pd.DataFrame(targets['annotations'])
 targets = targets.groupby('image_id').agg({'caption': list})
 targets = targets['caption'].to_list()

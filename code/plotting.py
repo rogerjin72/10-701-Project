@@ -2,6 +2,7 @@ import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # LOSS PLOTS
 fig, ax = plt.subplots(nrows = 1, ncols = 2)
@@ -24,9 +25,9 @@ ax[0].set_ylim(bottom = 1.5, top = 2.5)
 ax[0].legend(loc = 'upper left')
 ax[0].set_xlabel('Epochs')
 ax[0].set_ylabel('Loss')
-ax[0].set_title('1D Convolution')
+ax[0].set_title('All Captions 8x8')
 
-data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps', 'losses.pt'))
+data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2', 'losses.pt'))
 train_loss = data['train_losses']
 val_loss = data['val_losses']
 print(min(train_loss))
@@ -42,7 +43,7 @@ ax[1].set_ylim(bottom = 1.5, top = 2.5)
 ax[1].legend(loc = 'upper left')
 ax[1].set_xlabel('Epochs')
 ax[1].set_ylabel('Loss')
-ax[1].set_title('2D Convolution')
+ax[1].set_title('1/5 Captions 4x4')
 plt.show()
 
 # BLEU PLOTS

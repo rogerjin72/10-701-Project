@@ -1,2 +1,0 @@
-model,epoch,greedy_bleu_4,beam_bleu_4,greedy_bleu_3,beam_bleu_3,greedy_bleu_2,beam_bleu_2,greedy_bleu_1,beam_bleu_1
-8x8,6,0.2435,0.2761,0.3554,0.3853,0.5127,0.5359,0.7303,0.7409
