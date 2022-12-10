@@ -10,7 +10,7 @@ class CaptionModel(nn.Module):
     def __init__(self, conv=2):
 
         super().__init__()
-        self.gpt = GPT2LMHeadModel.from_pretrained('gpt2')
+        self.gpt = GPT2LMHeadModel.from_pretrained(hp.GPT)
         self.gpt.to(hp.DEVICE)
         self.gpt_dim = self.gpt.transformer.wte.weight.shape[1]
         self.prefix_len = hp.PREFIX_LEN
@@ -20,7 +20,7 @@ class CaptionModel(nn.Module):
             for param in self.gpt.parameters():
                 param.requires_grad=False
 
-        self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        self.tokenizer = GPT2Tokenizer.from_pretrained(hp.GPT)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Alignment layer
