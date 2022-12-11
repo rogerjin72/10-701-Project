@@ -2,8 +2,8 @@ from lexical_diversity import lex_div as ld
 import os
 import json
 
-model = '8x8'
-epoch = 6
+model = 'conv2_all_caps_4x4'
+epoch = 10
 method = 'beam'
 
 prediction_path = os.path.join('data', 'predictions', model, '{0}_epoch'.format(epoch), '{0}.json'.format(method))

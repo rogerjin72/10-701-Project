@@ -95,6 +95,7 @@ class CaptionModel(nn.Module):
             label_pad = label_pad.long()
             labels = torch.cat([label_pad, tokens['input_ids']], axis=1)
 
+        print(inp_embed.shape)
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask)
         return output
 
@@ -300,6 +301,7 @@ class Predictor(object):
 
         with torch.no_grad():
             inp_embed = self.model.generate_prefix(img)
+            
             # get log probabilities
             logits = self.gpt(inputs_embeds=inp_embed).logits
             logits = torch.log(F.softmax(logits, dim=-1))

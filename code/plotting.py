@@ -9,41 +9,26 @@ fig, ax = plt.subplots(nrows = 1, ncols = 2)
 c1 = u'#1f77b4'
 c2 = u'#ff7f0e'
 
-data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_8x8', 'losses.pt'))
+data = torch.load(os.path.join('models', 'ViT_conv1d_frozen_gpt2', 'losses.pt'))
 train_loss = data['train_losses']
 val_loss = data['val_losses']
-print(min(train_loss))
-print(min(val_loss))
-
-ax[0].plot(train_loss, color = c1, label = 'Training Loss', marker = '.')
-ax[0].plot(val_loss, color = c2, label = 'Validation Loss', marker = '.')
-ax[0].axvline(np.argmin(val_loss), color = c2, linestyle = '--', linewidth = 1)
-ax[0].axhline(np.min(val_loss), color = c2, linestyle = '--', linewidth = 1)
-ax[0].set_xlim(left = 0, right = 20)
-ax[0].set_ylim(bottom = 1.5, top = 2.5)
-
-ax[0].legend(loc = 'upper left')
-ax[0].set_xlabel('Epochs')
-ax[0].set_ylabel('Loss')
-ax[0].set_title('All Captions 8x8')
+print(train_loss[20])
+print(val_loss[20])
+ax[0].plot(train_loss, color = c1, linestyle = '-',  label = 'Conv1D | Training Loss',    marker = '.')
+ax[0].plot(val_loss,   color = c1, linestyle = '--', label = 'Conv1D | Validation Loss',  marker = '.')
 
 data = torch.load(os.path.join('models', 'ViT_conv2d_frozen_gpt2', 'losses.pt'))
 train_loss = data['train_losses']
 val_loss = data['val_losses']
-print(min(train_loss))
-print(min(val_loss))
+print(train_loss[20])
+print(val_loss[20])
+ax[0].plot(train_loss, color = c2, linestyle = '-',  label = 'Conv2D | Training Loss',    marker = '.')
+ax[0].plot(val_loss,   color = c2, linestyle = '--', label = 'Conv2D | Validation Loss',  marker = '.')
 
-ax[1].plot(train_loss, color = c1, label = 'Training Loss', marker = '.')
-ax[1].plot(val_loss, color = c2, label = 'Validation Loss', marker = '.')
-ax[1].axvline(np.argmin(val_loss), color = c2, linestyle = '--', linewidth = 1)
-ax[1].axhline(np.min(val_loss), color = c2, linestyle = '--', linewidth = 1)
-ax[1].set_xlim(left = 0, right = 20)
-ax[1].set_ylim(bottom = 1.5, top = 2.5)
-
-ax[1].legend(loc = 'upper left')
-ax[1].set_xlabel('Epochs')
-ax[1].set_ylabel('Loss')
-ax[1].set_title('1/5 Captions 4x4')
+ax[0].set_xlim(left = 0, right = 20)
+ax[0].set_ylim(bottom = 1.5, top = 2.5)
+ax[0].set_title('Conv 2D All Captions 4x4')
+ax[0].legend()
 plt.show()
 
 # BLEU PLOTS

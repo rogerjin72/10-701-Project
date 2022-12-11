@@ -94,7 +94,6 @@ if __name__ == '__main__':
                 N_trained += len(captions)
                 train_loss += loss.item() * len(captions)
                 tepoch.set_postfix(train_loss = train_loss / N_trained)
-                time.sleep(0.01)
 
         # Iterate over validation batches
         model.eval()

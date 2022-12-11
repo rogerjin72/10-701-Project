@@ -3,3 +3,4 @@ models/
 *.pt
 *.png
 *.jpg
+*.pyc
