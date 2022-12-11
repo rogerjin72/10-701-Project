@@ -95,7 +95,6 @@ class CaptionModel(nn.Module):
             label_pad = label_pad.long()
             labels = torch.cat([label_pad, tokens['input_ids']], axis=1)
 
-        print(inp_embed.shape)
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask)
         return output
 
@@ -301,7 +300,6 @@ class Predictor(object):
 
         with torch.no_grad():
             inp_embed = self.model.generate_prefix(img)
-            
             # get log probabilities
             logits = self.gpt(inputs_embeds=inp_embed).logits
             logits = torch.log(F.softmax(logits, dim=-1))
@@ -370,8 +368,13 @@ class Predictor(object):
                     inp_embed = inp_embed[~eos_token]
 
         # format candidates and scores, get top scoring prediction
-        candidates = [t for i in candidates for t in i]
-        candidate_embeddings = [t for i in candidate_embeddings for t in i]
-        scores = torch.cat(candidate_scores).flatten()
+        if candidates:
+            candidates = [t for i in candidates for t in i]
+            candidate_embeddings = [t for i in candidate_embeddings for t in i]
+            scores = torch.cat(candidate_scores).flatten()
+        else:
+            # handle case with no EOS token
+            candidates = top_k
+            candidate_embeddings = inp_embed
 
         return candidates[scores.argmax()], candidate_embeddings[scores.argmax()]
