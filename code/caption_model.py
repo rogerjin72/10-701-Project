@@ -7,7 +7,23 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from transformer import EncoderConv2D, EncoderConv1D
 
 class CaptionModel(nn.Module):
+    """
+    combined align and GPT network
+    """
     def __init__(self, conv=2, max_length=60):
+        """
+        Parameters
+        ----------
+        conv : int, optional
+            number of convolutional layers to include, default 2
+        max_length : int, optional
+            maximum sequence length for the forward pass excluding
+            the prefix token, default 60
+        
+        Returns
+        -------
+        None
+        """
 
         super().__init__()
         self.gpt = GPT2LMHeadModel.from_pretrained(hp.GPT)
@@ -88,6 +104,7 @@ class CaptionModel(nn.Module):
         # pad attention
         mask_pad = torch.ones((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
         mask_pad = mask_pad.long()
+        # concat and drop tokens over max length
         mask = torch.cat([mask_pad, mask], axis=1)[:, :self.max_length, ...]
 
         # create labels
@@ -96,7 +113,10 @@ class CaptionModel(nn.Module):
             label_pad = torch.zeros((tokens['input_ids'].shape[0], self.prefix_len), device = hp.DEVICE)
             label_pad = label_pad - 100
             label_pad = label_pad.long()
+            # concat and drop tokens over max length
             labels = torch.cat([label_pad, tokens['input_ids']], axis=1)[:, :self.max_length, ...]
+
+        # drop tokens over max length
         inp_embed = inp_embed[:, :self.max_length, ...]
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask, output_attentions=output_attentions)
         return output
