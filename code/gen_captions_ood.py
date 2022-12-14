@@ -6,17 +6,18 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from img_caption_model import ImageCaptionModel
 from transformers import GPT2Tokenizer
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 '''
 Forward pass the image caption model and save results
 '''
 
 # Path to save captioned images:
-img_save_path = os.path.join('data', 'eval_data', 'ood_cap')
+img_save_path = os.path.join('data', 'captions', 'ood_cap')
 img_path = os.path.join('data', 'ood_images')
 
 # Load caption generator
-img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps', 'model_epoch5.pt'))
+img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_4x4_large', 'model_epoch10.pt'))
 img_cap_model.eval()
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 

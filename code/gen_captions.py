@@ -5,13 +5,15 @@ from coco_dataset import COCODataset_ImageOnly
 from img_caption_model import ImageCaptionModel
 from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer
+from textwrap import wrap
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 '''
 Forward pass the image caption model and save results
 '''
 
 train = False
-num_imgs = 100
+num_imgs = 5000
 
 # Path to save captioned images:
 if train:
@@ -21,23 +23,15 @@ else:
 
 # Load validation data
 dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), train)
-dataloader = DataLoader(dataset, shuffle = True)
-
-# Sample subset
-# idx1 = dataset.val_img_ids.index(305343)
-# idx2 = dataset.val_img_ids.index(100510)
-# idx3 = dataset.val_img_ids.index(451435)
-# dataset = torch.utils.data.Subset(dataset, [idx1, idx2, idx3])
-# dataloader = DataLoader(dataset, shuffle = False, batch_size = 1)
+dataloader = DataLoader(dataset, shuffle = False)
 
 # Load caption generator
-img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_4x4', 'model_epoch1.pt'))
+img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_4x4_large', 'model_epoch10.pt'))
 img_cap_model.eval()
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
 # Sample images
 i = 0
-text = None
 for img, id in iter(dataloader):
     i += 1
     if i > num_imgs:
@@ -49,13 +43,13 @@ for img, id in iter(dataloader):
     caption = tokenizer.decode(tokens).split('<|endoftext|>')[0]
 
     # Plot/show
-    if text:
-        text.remove()
     id = id.squeeze().item()
     img = img.permute(1, 2, 0).to(torch.uint8)
+    plt.figure()
     plt.gca().axes.get_xaxis().set_ticks([])
     plt.gca().axes.get_yaxis().set_ticks([])
-    text = plt.figtext(0.5, 0.9, caption, fontsize = 16, wrap = True, ha = 'center')
+    plt.figtext(0.5, 0.9, '\n'.join(wrap(caption, 30)), fontsize = 16, ha = 'center')
     plt.imshow(img)
     plt.savefig(os.path.join(img_path, '{0}.jpg'.format(id)))
+    plt.close()
 

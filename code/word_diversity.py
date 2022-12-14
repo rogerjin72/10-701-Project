@@ -4,7 +4,7 @@ import json
 
 model = 'conv2_all_caps_4x4'
 epoch = 10
-method = 'beam'
+method = 'greedy'
 
 prediction_path = os.path.join('data', 'predictions', model, '{0}_epoch'.format(epoch), '{0}.json'.format(method))
 with open(prediction_path) as f:

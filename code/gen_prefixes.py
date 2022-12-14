@@ -12,14 +12,14 @@ train = False
 dataset = COCODataset_ImageOnly(os.path.join('data', 'coco_data'), train)
 
 # Sample subset
-idx1 = dataset.val_img_ids.index(305343)
-idx2 = dataset.val_img_ids.index(100510)
+idx1 = dataset.val_img_ids.index(127263)
+idx2 = dataset.val_img_ids.index(368212)
 idx3 = dataset.val_img_ids.index(451435)
 dataset = torch.utils.data.Subset(dataset, [idx1, idx2, idx3])
 dataloader = DataLoader(dataset, shuffle = False, batch_size = 1)
 
 # Load caption generator
-img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps', 'model_epoch5.pt'))
+img_cap_model = ImageCaptionModel(os.path.join('models', 'ViT_conv2d_frozen_gpt2_allcaps_4x4_large', 'model_epoch10.pt'))
 img_cap_model.eval()
 img_cap_model.attach_hook()
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
@@ -55,4 +55,4 @@ for img, id in iter(dataloader):
     # Save
     prefixes[id] = repr(prefix)
 
-#torch.save(prefixes, 'data/eval_data/prefixes/conv1d.pt')
+torch.save(prefixes, 'data/prefixes/conv2d_allcaps_large.pt')

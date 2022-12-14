@@ -120,7 +120,14 @@ class EncoderConv2D(nn.Module):
 
         # Conv layers
         self.conv1 = nn.Conv2d(in_channels = embedding_dim, out_channels = embedding_dim, kernel_size = 6)
-        self.conv2 = nn.Conv2d(in_channels = embedding_dim, out_channels = embedding_dim, kernel_size = 6)
+        if hp.GPT == 'gpt2':
+            self.conv2 = nn.Conv2d(in_channels = embedding_dim, out_channels = 768, kernel_size = 6)
+        elif hp.GPT == 'gpt2-medium':
+            self.conv2 = nn.Conv2d(in_channels = embedding_dim, out_channels = 1024, kernel_size = 6)
+        elif hp.GPT == 'gpt2-large':
+            self.conv2 = nn.Conv2d(in_channels = embedding_dim, out_channels = 1280, kernel_size = 6)
+        else:
+            raise(ValueError('{0} is an invalid GPT-2 size parameter').format(hp.GPT))
         self.tanh = nn.Tanh()
 
         # Transformer layers

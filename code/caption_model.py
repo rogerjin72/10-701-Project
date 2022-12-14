@@ -121,7 +121,6 @@ class CaptionModel(nn.Module):
         output = self.gpt(inputs_embeds=inp_embed, labels=labels, attention_mask=mask, output_attentions=output_attentions)
         return output
 
-
 class Predictor(object):
     def __init__(self, model: CaptionModel):
         """
