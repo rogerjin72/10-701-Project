@@ -6,6 +6,7 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from img_caption_model import ImageCaptionModel
 from transformers import GPT2Tokenizer
+from textwrap import wrap
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 '''
@@ -43,7 +44,7 @@ for fn in fns:
     img = img.permute(1, 2, 0).to(torch.uint8)
     plt.gca().axes.get_xaxis().set_ticks([])
     plt.gca().axes.get_yaxis().set_ticks([])
-    text = plt.figtext(0.5, 0.9, caption, fontsize = 16, wrap = True, ha = 'center')
+    text = plt.figtext(0.5, 0.9, '\n'.join(wrap(caption, 40)), fontsize = 16, ha = 'center')
     plt.imshow(img)
     plt.savefig(os.path.join(img_save_path, fn))
 

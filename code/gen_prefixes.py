@@ -45,10 +45,11 @@ for img, id in iter(dataloader):
         sim = cosine_sim(gpt2_embeddings, prefix_embed)
     sim = torch.argmax(sim, dim = 0)
 
-    # Decode caption and prefix
     caption = tokenizer.decode(tokens).split('<|endoftext|>')[0]
-    prefix = tokenizer.decode(sim)
-    print(repr(prefix))
+    # Decode caption and prefix
+    for j in range(len(sim)):
+        prefix = tokenizer.decode(sim[j])
+        print(repr(prefix) + '\t', end = None)
     print(caption)
     print('=================================================================')
 
